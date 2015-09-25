@@ -85,7 +85,7 @@ L:
 					log.Printf("NOT attacking %s: too many network failures.\n", host)
 					netfailed = netfailed + 1
 				}
-				continue // just consume the creds and don't connect out.
+				continue // don't connect out after 3 network failures in a row.
 			}
 			c, err := net.Dial("tcp", target)
 			if err != nil {
