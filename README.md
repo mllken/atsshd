@@ -2,7 +2,7 @@
 An sshd that bruteforces attackers with their own passwords.
 
 ## Description
-ptsshd listens for incoming SSH connections and logs the username and password.  It has an attack mode option where it will try the username/password combo against the attacker IP in realtime, as the credentials come in.  All incoming authentication attempts will always fail.
+ptsshd listens for incoming SSH connections and logs the username and password.  It has an attack mode option where it will try the username/password combo against the attacker IP in realtime, as the credentials come in.  All incoming authentication attempts will always fail.  The sshd will not attack 127.0.0.1 in order to avoid loops.
 
 ```
 Usage of ./ptsshd:
