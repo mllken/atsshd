@@ -1,4 +1,4 @@
-# ptsshd
+# asshd
 An sshd that bruteforces attackers with their own passwords.
 
 ## Description
