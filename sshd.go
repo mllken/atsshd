@@ -1,4 +1,4 @@
-// ptsshd: Persistent Threat SSHD
+// ptsshd
 // usage: ptsshd [-A] [-p port] [-l logfile] [-h hostkeyfile]
 package main
 
