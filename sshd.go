@@ -28,10 +28,11 @@ const (
 )
 
 var (
-	listenPort  = flag.Int("p", DefPort, "port to listen on")
-	hostKeyFile = flag.String("h", "", "server host key private pem file")
-	logFile     = flag.String("l", "", "output log file")
-	attackMode  = flag.Bool("A", false, "turn on attack mode")
+	listenPort   = flag.Int("p", DefPort, "port to listen on")
+	hostKeyFile  = flag.String("h", "", "server host key private pem file")
+	logFile      = flag.String("l", "", "output log file")
+	attackMode   = flag.Bool("A", false, "turn on attack mode")
+	bannerString = flag.String("B", DefBanner, "server SSH banner")
 )
 
 type Cred struct {
@@ -97,7 +98,7 @@ L:
 			cConfig := &ssh.ClientConfig{
 				User:          cred.user,
 				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
-				ClientVersion: DefBanner,
+				ClientVersion: *bannerString,
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
@@ -156,7 +157,7 @@ func main() {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr().String())
 			}
 			log.Printf("Attacker %s tried: %s:%s\n", host, conn.User(), pass)
-			if *attackMode  && host != "127.0.0.1" {
+			if *attackMode && host != "127.0.0.1" {
 				attCh <- &Attacker{
 					Cred{conn.User(), string(pass)},
 					host,
@@ -164,7 +165,7 @@ func main() {
 			}
 			return nil, errors.New("password auth failed") // always fail
 		},
-		ServerVersion: DefBanner,
+		ServerVersion: *bannerString,
 	}
 	var pemBytes []byte
 	if *hostKeyFile != "" {
