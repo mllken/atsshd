@@ -16,15 +16,17 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
-	DefPort         = 22
-	DefBanner       = "SSH-2.0-OpenSSH_6.1p2"
-	DefCacheTimeout = 1 * time.Hour
-	DefKeyBits      = 2048
-	CredBacklog     = 2048
+	DefPort            = 22
+	DefRFCBannerPrefix = "SSH-2.0-"
+	DefBanner          = "SSH-2.0-OpenSSH_6.1p2"
+	DefCacheTimeout    = 1 * time.Hour
+	DefKeyBits         = 2048
+	CredBacklog        = 2048
 )
 
 var (
@@ -138,6 +140,10 @@ func genPrivateKey(bits int) []byte {
 
 func main() {
 	flag.Parse()
+	if !strings.HasPrefix(*bannerString, DefRFCBannerPrefix) || !(len(*bannerString) > len(DefRFCBannerPrefix)) {
+		log.Fatal("ERROR: SSHv2 banner not RFC compliant, must start with SSH-2.0- and contain at least one additional character", *bannerString)
+	}
+
 	if *logFile != "" {
 		f, err := os.OpenFile(*logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 		if err != nil {
