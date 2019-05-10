@@ -5,8 +5,10 @@ An sshd that bruteforces attackers with their own passwords.
 ptsshd listens for incoming SSH connections and logs the username and password.  It has an attack mode option where it will try the username/password combo against the attacker IP in realtime, as the credentials come in.  All incoming authentication attempts will always fail.  The sshd will not attack 127.0.0.1 in order to avoid loops.
 
 ```
-Usage of ./ptsshd:
+Usage of ./atsshd:
   -A	turn on attack mode
+  -b banner
+    	SSH server banner (default "SSH-2.0-OpenSSH_6.1p2")
   -h string
     	server host key private pem file
   -l string
