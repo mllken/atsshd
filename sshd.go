@@ -30,9 +30,9 @@ const (
 )
 
 var (
-	listenPort   = flag.Int("p", DefPort, "port to listen on")
-	hostKeyFile  = flag.String("h", "", "server host key private pem file")
-	logFile      = flag.String("l", "", "output log file")
+	listenPort   = flag.Int("p", DefPort, "`port` to listen on")
+	hostKeyFile  = flag.String("h", "", "server host key private pem `file`")
+	logFile      = flag.String("l", "", "output log `file`")
 	attackMode   = flag.Bool("A", false, "turn on attack mode")
 	bannerLine   = flag.String("b", DefBanner, "SSH server `banner`")
 )
