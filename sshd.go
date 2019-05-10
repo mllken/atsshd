@@ -1,5 +1,5 @@
 // atsshd
-// usage: atsshd [-A] [-p port] [-l logfile] [-h hostkeyfile]
+// usage: atsshd [-A] [-b banner] [-p port] [-l logfile] [-h hostkeyfile]
 package main
 
 import (
@@ -34,7 +34,7 @@ var (
 	hostKeyFile  = flag.String("h", "", "server host key private pem file")
 	logFile      = flag.String("l", "", "output log file")
 	attackMode   = flag.Bool("A", false, "turn on attack mode")
-	bannerString = flag.String("B", DefBanner, "server SSH banner")
+	bannerLine   = flag.String("b", DefBanner, "SSH server `banner`")
 )
 
 type Cred struct {
@@ -100,7 +100,7 @@ L:
 			cConfig := &ssh.ClientConfig{
 				User:          cred.user,
 				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
-				ClientVersion: *bannerString,
+				ClientVersion: *bannerLine,
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
@@ -140,8 +140,8 @@ func genPrivateKey(bits int) []byte {
 
 func main() {
 	flag.Parse()
-	if !strings.HasPrefix(*bannerString, DefRFCBannerPrefix) || !(len(*bannerString) > len(DefRFCBannerPrefix)) {
-		log.Fatal("ERROR: SSHv2 banner not RFC compliant, must start with SSH-2.0- and contain at least one additional character", *bannerString)
+	if !strings.HasPrefix(*bannerLine, DefRFCBannerPrefix) || len(*bannerLine) <= len(DefRFCBannerPrefix) {
+		log.Fatal("ERROR: SSHv2 banner not RFC compliant, must start with SSH-2.0- and contain at least one additional character", *bannerLine)
 	}
 
 	if *logFile != "" {
@@ -171,7 +171,7 @@ func main() {
 			}
 			return nil, errors.New("password auth failed") // always fail
 		},
-		ServerVersion: *bannerString,
+		ServerVersion: *bannerLine,
 	}
 	var pemBytes []byte
 	if *hostKeyFile != "" {
