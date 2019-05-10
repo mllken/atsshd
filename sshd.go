@@ -123,10 +123,11 @@ L:
 
 // a goroutine - one for each incoming attacker
 func handle(c net.Conn, sConfig *ssh.ServerConfig) {
+	defer c.Close()
+
 	log.Printf("Attacker connection from: %s\n", c.RemoteAddr().String())
 	ssh.NewServerConn(c, sConfig)
 	log.Printf("Closed connection from: %s\n", c.RemoteAddr().String())
-	c.Close()
 }
 
 func genPrivateKey(bits int) []byte {
