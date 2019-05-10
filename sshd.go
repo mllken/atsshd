@@ -1,5 +1,6 @@
 // atsshd
 // usage: atsshd [-A] [-b banner] [-p port] [-l logfile] [-h hostkeyfile]
+
 package main
 
 import (
@@ -9,15 +10,16 @@ import (
 	"encoding/pem"
 	"errors"
 	"flag"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strconv"
-	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -26,15 +28,16 @@ const (
 	DefBanner          = "SSH-2.0-OpenSSH_6.1p2"
 	DefCacheTimeout    = 1 * time.Hour
 	DefKeyBits         = 2048
-	CredBacklog        = 2048
+
+	CredBacklog = 2048
 )
 
 var (
-	listenPort   = flag.Int("p", DefPort, "`port` to listen on")
-	hostKeyFile  = flag.String("h", "", "server host key private pem `file`")
-	logFile      = flag.String("l", "", "output log `file`")
-	attackMode   = flag.Bool("A", false, "turn on attack mode")
-	bannerLine   = flag.String("b", DefBanner, "SSH server `banner`")
+	listenPort  = flag.Int("p", DefPort, "`port` to listen on")
+	hostKeyFile = flag.String("h", "", "server host key private pem `file`")
+	logFile     = flag.String("l", "", "output log `file`")
+	attackMode  = flag.Bool("A", false, "enable attack mode")
+	bannerLine  = flag.String("b", DefBanner, "SSH server `banner`")
 )
 
 type Cred struct {
@@ -140,8 +143,10 @@ func genPrivateKey(bits int) []byte {
 
 func main() {
 	flag.Parse()
-	if !strings.HasPrefix(*bannerLine, DefRFCBannerPrefix) || len(*bannerLine) <= len(DefRFCBannerPrefix) {
-		log.Fatal("ERROR: SSHv2 banner not RFC compliant, must start with SSH-2.0- and contain at least one additional character", *bannerLine)
+
+	match, err := regexp.MatchString(`^SSH-2.0-[[:alnum:]]+`, *bannerLine)
+	if !match {
+		log.Fatal("ERROR: SSH2 banner must start with SSH-2.0- and contain at least one additional character")
 	}
 
 	if *logFile != "" {
@@ -189,16 +194,20 @@ func main() {
 		log.Fatal(err)
 	}
 	sConfig.AddHostKey(pkey)
-	ln, err := net.Listen("tcp4", ":"+strconv.Itoa(*listenPort))
+
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*listenPort))
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	log.Printf("Listening for SSH connections on: %s\n", ln.Addr().String())
+
 	if *attackMode {
 		log.Printf("WARNING: attack mode is on.  Incoming clients will be attacked.\n")
 	} else {
 		log.Printf("passive mode is on.  Incoming clients will not be attacked.\n")
 	}
+
 	for {
 		c, err := ln.Accept()
 		if err != nil {
