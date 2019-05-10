@@ -9,11 +9,11 @@ Usage of ./atsshd:
   -A	turn on attack mode
   -b banner
     	SSH server banner (default "SSH-2.0-OpenSSH_6.1p2")
-  -h string
+  -h file
     	server host key private pem file
-  -l string
+  -l file
     	output log file
-  -p int
+  -p port
     	port to listen on (default 22)
 ```
 
