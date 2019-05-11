@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -51,7 +52,7 @@ type Attacker struct {
 }
 
 // a goroutine - maintains the cache of attacker IPs.
-func attacker(attCh <-chan *Attacker) {
+func attacker(banner string, attCh <-chan *Attacker) {
 	cacheMap := make(map[string]chan *Cred, 1024)
 	doneCh := make(chan string, 32)
 	for {
@@ -61,7 +62,7 @@ func attacker(attCh <-chan *Attacker) {
 			if !ok {
 				credCh = make(chan *Cred, CredBacklog)
 				cacheMap[attacker.host] = credCh
-				go attack(attacker.host, credCh, doneCh)
+				go attack(attacker.host, banner, credCh, doneCh)
 			}
 			// non-blocking send so we don't ever get held up.
 			select {
@@ -77,7 +78,7 @@ func attacker(attCh <-chan *Attacker) {
 }
 
 // a goroutine - dedicated to serially attacking a host
-func attack(host string, credCh <-chan *Cred, doneCh chan<- string) {
+func attack(host, banner string, credCh <-chan *Cred, doneCh chan<- string) {
 	netfailed := 0
 	target := net.JoinHostPort(host, strconv.Itoa(DefPort))
 	timer := time.NewTimer(DefCacheTimeout)
@@ -130,16 +131,33 @@ func handle(c net.Conn, sConfig *ssh.ServerConfig) {
 	log.Printf("Closed connection from: %s\n", c.RemoteAddr())
 }
 
-func genRSAKey(bits int) ([]byte, error) {
-	pkey, err := rsa.GenerateKey(rand.Reader, bits)
+// if keyFile is empty, generate a new RSA key.
+func prepareHostKey(keyFile string, bits int) (ssh.Signer, error) {
+	var err error
+	var pemBytes []byte
+	if keyFile != "" {
+		pemBytes, err = ioutil.ReadFile(keyFile)
+		if err != nil {
+			return nil, fmt.Errorf("ERROR: unable to read file: %s\n", keyFile)
+		}
+	} else {
+		log.Printf("Generating %d-bit RSA private key.", bits)
+		var pkey *rsa.PrivateKey
+		pkey, err = rsa.GenerateKey(rand.Reader, bits)
+		if err != nil {
+			return nil, err
+		}
+		blk := &pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(pkey),
+		}
+		pemBytes = pem.EncodeToMemory(blk)
+	}
+	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
 		return nil, err
 	}
-	blk := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(pkey),
-	}
-	return pem.EncodeToMemory(blk), nil
+	return signer, nil
 }
 
 func main() {
@@ -160,7 +178,7 @@ func main() {
 	}
 
 	attCh := make(chan *Attacker, 32)
-	go attacker(attCh)
+	go attacker(*bannerLine, attCh)
 
 	sConfig := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
@@ -179,32 +197,19 @@ func main() {
 		},
 		ServerVersion: *bannerLine,
 	}
-	var err error
-	var pemBytes []byte
-	if *hostKeyFile != "" {
-		pemBytes, err = ioutil.ReadFile(*hostKeyFile)
-		if err != nil {
-			log.Fatalf("ERROR: unable to read file: %s\n", *hostKeyFile)
-		}
-	} else {
-		log.Printf("Generating %d-bit RSA private key.", DefKeyBits)
-		pemBytes, err = genRSAKey(DefKeyBits)
-		if err != nil {
-			log.Fatalf("genRSAKey: %v", err)
-		}
-	}
-	pkey, err := ssh.ParsePrivateKey(pemBytes)
+
+	signer, err := prepareHostKey(*hostKeyFile, DefKeyBits)
 	if err != nil {
 		log.Fatal(err)
 	}
-	sConfig.AddHostKey(pkey)
+	sConfig.AddHostKey(signer)
 
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*listenPort))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Listening for SSH connections on: %s\n", ln.Addr().String())
+	log.Printf("Listening for SSH connections on: %s\n", ln.Addr())
 
 	if *attackMode {
 		log.Printf("WARNING: attack mode is on.  Incoming clients will be attacked.\n")
