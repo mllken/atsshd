@@ -145,7 +145,7 @@ func genPrivateKey(bits int) []byte {
 func main() {
 	flag.Parse()
 
-	match, err := regexp.MatchString(`^SSH-2.0-[[:alnum:]]+`, *bannerLine)
+	match := regexp.MustCompile(`^SSH-2.0-[[:alnum:]]+`).MatchString(*bannerLine)
 	if !match {
 		log.Fatal("ERROR: SSH2 banner must start with SSH-2.0- and contain at least one additional character")
 	}
