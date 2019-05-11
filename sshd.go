@@ -52,7 +52,7 @@ type Attacker struct {
 }
 
 // a goroutine - maintains the cache of attacker IPs.
-func attacker(banner string, attCh <-chan *Attacker) {
+func attackLoop(banner string, attCh <-chan *Attacker) {
 	cacheMap := make(map[string]chan *Cred, 1024)
 	doneCh := make(chan string, 32)
 	for {
@@ -178,7 +178,7 @@ func main() {
 	}
 
 	attCh := make(chan *Attacker, 32)
-	go attacker(*bannerLine, attCh)
+	go attackLoop(*bannerLine, attCh)
 
 	sConfig := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
