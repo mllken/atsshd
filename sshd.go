@@ -33,14 +33,6 @@ const (
 	CredBacklog = 2048
 )
 
-var (
-	listenPort  = flag.Int("p", DefPort, "`port` to listen on")
-	hostKeyFile = flag.String("h", "", "server host key private pem `file`")
-	logFile     = flag.String("l", "", "output log `file`")
-	attackMode  = flag.Bool("A", false, "enable attack mode")
-	bannerLine  = flag.String("b", DefBanner, "SSH server `banner`")
-)
-
 type Cred struct {
 	user string
 	pass string
@@ -104,7 +96,7 @@ L:
 			cConfig := &ssh.ClientConfig{
 				User:          cred.user,
 				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
-				ClientVersion: *bannerLine,
+				ClientVersion: banner,
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
@@ -161,6 +153,13 @@ func prepareHostKey(keyFile string, bits int) (ssh.Signer, error) {
 }
 
 func main() {
+	var (
+		listenPort  = flag.Int("p", DefPort, "`port` to listen on")
+		hostKeyFile = flag.String("h", "", "server host key private pem `file`")
+		logFile     = flag.String("l", "", "output log `file`")
+		attackMode  = flag.Bool("A", false, "enable attack mode")
+		bannerLine  = flag.String("b", DefBanner, "SSH server `banner`")
+	)
 	flag.Parse()
 
 	match := regexp.MustCompile(`^SSH-2.0-[[:alnum:]]+`).MatchString(*bannerLine)
