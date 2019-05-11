@@ -185,7 +185,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
-			log.Printf("Attacker %s tried: %s:%s\n", host, conn.User(), pass)
+			log.Printf("Attacker %s (%s) password auth - %s:%s\n", host, conn.ClientVersion(), conn.User(), pass)
 			if *attackMode && host != "127.0.0.1" {
 				attCh <- &Attacker{
 					Cred{conn.User(), string(pass)},
