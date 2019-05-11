@@ -125,21 +125,21 @@ L:
 func handle(c net.Conn, sConfig *ssh.ServerConfig) {
 	defer c.Close()
 
-	log.Printf("Attacker connection from: %s\n", c.RemoteAddr().String())
+	log.Printf("Attacker connection from: %s\n", c.RemoteAddr())
 	ssh.NewServerConn(c, sConfig)
-	log.Printf("Closed connection from: %s\n", c.RemoteAddr().String())
+	log.Printf("Closed connection from: %s\n", c.RemoteAddr())
 }
 
-func genPrivateKey(bits int) []byte {
+func genRSAKey(bits int) ([]byte, error) {
 	pkey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		log.Fatalf("genPrivateKey: %v\n", err)
+		return nil, err
 	}
 	blk := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(pkey),
 	}
-	return pem.EncodeToMemory(blk)
+	return pem.EncodeToMemory(blk), nil
 }
 
 func main() {
@@ -166,7 +166,7 @@ func main() {
 		PasswordCallback: func(conn ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
 			if err != nil {
-				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr().String())
+				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
 			log.Printf("Attacker %s tried: %s:%s\n", host, conn.User(), pass)
 			if *attackMode && host != "127.0.0.1" {
@@ -179,16 +179,19 @@ func main() {
 		},
 		ServerVersion: *bannerLine,
 	}
+	var err error
 	var pemBytes []byte
 	if *hostKeyFile != "" {
-		var err error
 		pemBytes, err = ioutil.ReadFile(*hostKeyFile)
 		if err != nil {
 			log.Fatalf("ERROR: unable to read file: %s\n", *hostKeyFile)
 		}
 	} else {
 		log.Printf("Generating %d-bit RSA private key.", DefKeyBits)
-		pemBytes = genPrivateKey(DefKeyBits)
+		pemBytes, err = genRSAKey(DefKeyBits)
+		if err != nil {
+			log.Fatalf("genRSAKey: %v", err)
+		}
 	}
 	pkey, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
