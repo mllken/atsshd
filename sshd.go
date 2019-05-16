@@ -18,6 +18,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -32,6 +33,17 @@ const (
 	DefKeyBits      = 2048
 	CredBacklog     = 2048
 )
+
+type multVar []string
+
+func (m *multVar) String() string {
+	return strings.Join(*m, ",")
+}
+
+func (m *multVar) Set(v string) error {
+	*m = append(*m, v)
+	return nil
+}
 
 type Cred struct {
 	user string
@@ -123,27 +135,29 @@ func handle(c net.Conn, sConfig *ssh.ServerConfig) {
 	log.Printf("Closed connection from: %s\n", c.RemoteAddr())
 }
 
-// if keyFile is empty, generate a new RSA key.
-func prepareHostKey(keyFile string, bits int) (ssh.Signer, error) {
-	var err error
-	var pemBytes []byte
-	if keyFile != "" {
-		pemBytes, err = ioutil.ReadFile(keyFile)
-		if err != nil {
-			return nil, fmt.Errorf("ERROR: unable to read file: %s\n", keyFile)
-		}
-	} else {
-		log.Printf("Generating %d-bit RSA private key.", bits)
-		var pkey *rsa.PrivateKey
-		pkey, err = rsa.GenerateKey(rand.Reader, bits)
-		if err != nil {
-			return nil, err
-		}
-		blk := &pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(pkey),
-		}
-		pemBytes = pem.EncodeToMemory(blk)
+func generateRSA_Key(bits int) (ssh.Signer, error) {
+	log.Printf("Generating %d-bit RSA private key.", bits)
+	pkey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return nil, err
+	}
+	blk := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(pkey),
+	}
+	pemBytes := pem.EncodeToMemory(blk)
+
+	signer, err := ssh.ParsePrivateKey(pemBytes)
+	if err != nil {
+		return nil, err
+	}
+	return signer, nil
+}
+
+func prepareHostKey(keyFile string) (ssh.Signer, error) {
+	pemBytes, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("ERROR: unable to read file: %s\n", keyFile)
 	}
 	signer, err := ssh.ParsePrivateKey(pemBytes)
 	if err != nil {
@@ -154,12 +168,14 @@ func prepareHostKey(keyFile string, bits int) (ssh.Signer, error) {
 
 func main() {
 	var (
-		listenPort  = flag.Int("p", DefPort, "`port` to listen on")
-		hostKeyFile = flag.String("h", "", "SSH server host key PEM `file`")
-		logFile     = flag.String("l", "", "output log `file`")
-		attackMode  = flag.Bool("A", false, "enable attack mode")
-		bannerLine  = flag.String("b", DefBanner, "SSH server `banner`")
+		listenPort = flag.Int("p", DefPort, "`port` to listen on")
+		logFile    = flag.String("l", "", "output log `file`")
+		attackMode = flag.Bool("A", false, "enable attack mode")
+		bannerLine = flag.String("b", DefBanner, "SSH server `banner`")
+
+		hostKeyFiles = make(multVar, 0)
 	)
+	flag.Var(&hostKeyFiles, "h", "SSH server host key PEM `file`s")
 	flag.Parse()
 
 	match := regexp.MustCompile(`^SSH-2.0-[[:alnum:]]+`).MatchString(*bannerLine)
@@ -197,11 +213,23 @@ func main() {
 		ServerVersion: *bannerLine,
 	}
 
-	signer, err := prepareHostKey(*hostKeyFile, DefKeyBits)
-	if err != nil {
-		log.Fatal(err)
+	if len(hostKeyFiles) == 0 {
+		signer, err := generateRSA_Key(DefKeyBits)
+		if err != nil {
+			log.Fatal(err)
+		}
+		sConfig.AddHostKey(signer)
+		log.Printf("Added host key to the configuration (%s)\n", signer.PublicKey().Type())
+	} else {
+		for _, file := range hostKeyFiles {
+			signer, err := prepareHostKey(file)
+			if err != nil {
+				log.Fatal(err)
+			}
+			sConfig.AddHostKey(signer)
+			log.Printf("Added host key to the configuration (%s)\n", signer.PublicKey().Type())
+		}
 	}
-	sConfig.AddHostKey(signer)
 
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*listenPort))
 	if err != nil {
