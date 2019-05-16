@@ -24,13 +24,13 @@ import (
 )
 
 const (
-	DefPort            = 22
 	DefRFCBannerPrefix = "SSH-2.0-"
 	DefBanner          = "SSH-2.0-OpenSSH_6.1p2"
-	DefCacheTimeout    = 1 * time.Hour
-	DefKeyBits         = 2048
 
-	CredBacklog = 2048
+	DefPort         = 22
+	DefCacheTimeout = 1 * time.Hour
+	DefKeyBits      = 2048
+	CredBacklog     = 2048
 )
 
 type Cred struct {
@@ -155,7 +155,7 @@ func prepareHostKey(keyFile string, bits int) (ssh.Signer, error) {
 func main() {
 	var (
 		listenPort  = flag.Int("p", DefPort, "`port` to listen on")
-		hostKeyFile = flag.String("h", "", "server host key private pem `file`")
+		hostKeyFile = flag.String("h", "", "SSH server host key PEM `file`")
 		logFile     = flag.String("l", "", "output log `file`")
 		attackMode  = flag.Bool("A", false, "enable attack mode")
 		bannerLine  = flag.String("b", DefBanner, "SSH server `banner`")
