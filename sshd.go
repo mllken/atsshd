@@ -145,13 +145,7 @@ func generateRSA_Key(bits int) (ssh.Signer, error) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(pkey),
 	}
-	pemBytes := pem.EncodeToMemory(blk)
-
-	signer, err := ssh.ParsePrivateKey(pemBytes)
-	if err != nil {
-		return nil, err
-	}
-	return signer, nil
+	return ssh.ParsePrivateKey(pem.EncodeToMemory(blk))
 }
 
 func prepareHostKey(keyFile string) (ssh.Signer, error) {
@@ -159,11 +153,7 @@ func prepareHostKey(keyFile string) (ssh.Signer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: unable to read file: %s\n", keyFile)
 	}
-	signer, err := ssh.ParsePrivateKey(pemBytes)
-	if err != nil {
-		return nil, err
-	}
-	return signer, nil
+	return ssh.ParsePrivateKey(pemBytes)
 }
 
 func main() {
