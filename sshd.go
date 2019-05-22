@@ -206,9 +206,9 @@ func main() {
 		},
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
-            if err != nil {
-                log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
-            }
+			if err != nil {
+				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
+			}
 			log.Printf("Attacker %s (%s) pubkey auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), ssh.FingerprintLegacyMD5(key))
 			return nil, errors.New("pubkey auth failed") // always fail
 		},
