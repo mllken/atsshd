@@ -50,6 +50,10 @@ type Cred struct {
 	pass string
 }
 
+func (c Cred) String() string {
+	return c.user + ":" + c.pass
+}
+
 type Attacker struct {
 	Cred
 	host string
@@ -112,10 +116,10 @@ L:
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
-				log.Printf("Fail: tried attacking %s with %s:%s\n", host, cred.user, cred.pass)
+				log.Printf("Fail: tried attacking %s with %s\n", host, cred)
 			} else {
 				conn.Close()
-				log.Printf("*** SUCCESS ***: %s:%s worked on %s\n", cred.user, cred.pass, host)
+				log.Printf("*** SUCCESS ***: %s worked on %s\n", cred, host)
 			}
 			c.Close()
 
@@ -191,7 +195,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
-			log.Printf("Attacker %s (%s) password auth - %s:%s\n", host, conn.ClientVersion(), conn.User(), pass)
+			log.Printf("Attacker %s (%s) password auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), pass)
 			if *attackMode && host != "127.0.0.1" {
 				attCh <- &Attacker{
 					Cred{conn.User(), string(pass)},
@@ -199,6 +203,14 @@ func main() {
 				}
 			}
 			return nil, errors.New("password auth failed") // always fail
+		},
+		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+			host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+            if err != nil {
+                log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
+            }
+			log.Printf("Attacker %s (%s) pubkey auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), ssh.FingerprintLegacyMD5(key))
+			return nil, errors.New("pubkey auth failed") // always fail
 		},
 		ServerVersion: *bannerLine,
 	}
