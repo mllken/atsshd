@@ -209,7 +209,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
-			log.Printf("Attacker %s (%s) pubkey auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), ssh.FingerprintLegacyMD5(key))
+			log.Printf("Attacker %s (%s) pubkey auth - %s : %s %s\n", host, conn.ClientVersion(), conn.User(), key.Type(), ssh.FingerprintLegacyMD5(key))
 			return nil, errors.New("pubkey auth failed") // always fail
 		},
 		ServerVersion: *bannerLine,
