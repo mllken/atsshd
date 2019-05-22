@@ -4,13 +4,14 @@ An sshd that bruteforces attackers with their own passwords.
 ## Description
 atsshd listens for incoming SSH connections and logs the username and password.  It has an attack mode option where it will try the username/password combo against the attacker IP in realtime, as the credentials come in.  All incoming authentication attempts will always fail.  The sshd will not attack 127.0.0.1 in order to avoid loops.
 
-```
+```bash
+$ ./atsshd --help
 Usage of ./atsshd:
-  -A	turn on attack mode
+  -A	enable attack mode
   -b banner
     	SSH server banner (default "SSH-2.0-OpenSSH_6.1p2")
   -h file
-    	server host key private pem file
+    	SSH server host key PEM files
   -l file
     	output log file
   -p port
