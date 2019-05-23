@@ -1,5 +1,5 @@
 # atsshd
-An sshd that logs passwords and pubkey attempts.  It can also bruteforce attackers with their own passwords in realtime.
+An sshd that logs passwords and pubkey auth attempts.  It can also bruteforce attackers with their own passwords.
 
 ## Description
 atsshd listens for incoming SSH connections and logs the username, password, and/or pubkey fingerprint.  It has an attack mode option where it will try the username/password combo against the attacker IP in realtime, as the credentials come in.  All incoming authentication attempts will always fail.  The sshd will not attack 127.0.0.1 in order to avoid loops.
