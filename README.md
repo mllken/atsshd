@@ -6,7 +6,7 @@ atsshd listens for incoming SSH connections and logs the username, password, and
 
 ```console
 $ atsshd --help
-Usage of ./atsshd:
+Usage of atsshd:
   -A	enable attack mode
   -b banner
     	SSH server banner (default "SSH-2.0-OpenSSH_6.1p2")
