@@ -166,6 +166,7 @@ func main() {
 		logFile    = flag.String("l", "", "output log `file`")
 		attackMode = flag.Bool("A", false, "enable attack mode")
 		bannerLine = flag.String("b", DefBanner, "SSH server `banner`")
+		sourceIP   = flag.String("s", "", "`source` IP of interface to bind to")
 
 		hostKeyFiles = make(multVar, 0)
 	)
@@ -233,7 +234,7 @@ func main() {
 		}
 	}
 
-	ln, err := net.Listen("tcp", ":"+strconv.Itoa(*listenPort))
+	ln, err := net.Listen("tcp", *sourceIP+":"+strconv.Itoa(*listenPort))
 	if err != nil {
 		log.Fatal(err)
 	}
