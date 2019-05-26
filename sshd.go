@@ -110,9 +110,9 @@ L:
 			}
 			netfailed = 0
 			cConfig := &ssh.ClientConfig{
-				User:          cred.user,
-				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
-				ClientVersion: banner,
+				User:            cred.user,
+				Auth:            []ssh.AuthMethod{ssh.Password(cred.pass)},
+				ClientVersion:   banner,
 				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
@@ -200,10 +200,7 @@ func main() {
 			log.Printf("Attacker %s (%s) password auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), pass)
 			if *attackMode {
 				if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() {
-					attCh <- &Attacker{
-						Cred{conn.User(), string(pass)},
-						host,
-					}
+					attCh <- &Attacker{Cred{conn.User(), string(pass)}, host}
 				}
 			}
 			return nil, errors.New("password auth failed") // always fail
