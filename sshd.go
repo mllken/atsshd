@@ -51,7 +51,7 @@ type Cred struct {
 }
 
 func (c Cred) String() string {
-	return c.user + ":" + c.pass
+	return c.user + " : " + c.pass
 }
 
 type Attacker struct {
@@ -113,6 +113,7 @@ L:
 				User:          cred.user,
 				Auth:          []ssh.AuthMethod{ssh.Password(cred.pass)},
 				ClientVersion: banner,
+				HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			}
 			conn, _, _, err := ssh.NewClientConn(c, target, cConfig)
 			if err != nil {
@@ -197,10 +198,12 @@ func main() {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
 			log.Printf("Attacker %s (%s) password auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), pass)
-			if *attackMode && host != "127.0.0.1" {
-				attCh <- &Attacker{
-					Cred{conn.User(), string(pass)},
-					host,
+			if *attackMode {
+				if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() {
+					attCh <- &Attacker{
+						Cred{conn.User(), string(pass)},
+						host,
+					}
 				}
 			}
 			return nil, errors.New("password auth failed") // always fail
