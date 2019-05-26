@@ -1,5 +1,4 @@
 // atsshd
-// usage: atsshd [-A] [-b banner] [-p port] [-l logfile] [-h hostkeyfile]
 
 package main
 
@@ -102,7 +101,7 @@ L:
 				}
 				continue // don't connect out after 3 network failures in a row.
 			}
-			c, err := net.Dial("tcp", target)
+			c, err := net.DialTimeout("tcp", target, 15 * time.Second)
 			if err != nil {
 				log.Printf("Fail: unable to establish tcp connection to %s\n", target)
 				netfailed = netfailed + 1
@@ -198,6 +197,7 @@ func main() {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
 			log.Printf("Attacker %s (%s) password auth - %s : %s\n", host, conn.ClientVersion(), conn.User(), pass)
+
 			if *attackMode {
 				if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() {
 					attCh <- &Attacker{Cred{conn.User(), string(pass)}, host}
@@ -211,6 +211,7 @@ func main() {
 				log.Fatalf("bad host or port: %s\n", conn.RemoteAddr())
 			}
 			log.Printf("Attacker %s (%s) pubkey auth - %s : %s %s\n", host, conn.ClientVersion(), conn.User(), key.Type(), ssh.FingerprintLegacyMD5(key))
+
 			return nil, errors.New("pubkey auth failed") // always fail
 		},
 		ServerVersion: *bannerLine,
