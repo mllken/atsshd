@@ -73,7 +73,7 @@ func attackLoop(banner string, attCh <-chan *Attacker) {
 			}
 			// non-blocking send so we don't ever get held up.
 			select {
-			case credCh <- &Cred{attacker.Cred.user, attacker.Cred.pass}:
+			case credCh <- &Cred{attacker.user, attacker.pass}:
 			default:
 			}
 
