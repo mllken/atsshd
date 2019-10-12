@@ -34,7 +34,7 @@ type Config struct {
 	EnableAttack bool
 
 	// Banner for the SSHD to use.
-	// If empty, then "SSH-2.0-OpenSSH_6.1p2" is used.
+	// If empty, then "SSH-2.0-OpenSSH_7.4p1" is used.
 	Banner string
 
 	// Hostkey file names.
