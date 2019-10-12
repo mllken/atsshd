@@ -114,10 +114,12 @@ func (srv *Server) attackLoop(attCh <-chan *attacker) {
 
 // a goroutine - dedicated to serially attacking a host
 func (srv *Server) attack(host string, credCh <-chan *cred, doneCh chan<- string) {
+	defer func() { doneCh <- host }()
+
 	netfailed := 0
 	target := net.JoinHostPort(host, strconv.Itoa(defPort))
 	timer := time.NewTimer(defCacheTimeout)
-L:
+
 	for {
 		timer.Reset(defCacheTimeout)
 		select {
@@ -152,10 +154,9 @@ L:
 			c.Close()
 
 		case <-timer.C:
-			break L
+			return
 		}
 	}
-	doneCh <- host
 }
 
 // a goroutine - one for each incoming attacker
