@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/emilliken/atsshd"
 )
@@ -17,17 +16,6 @@ const (
 	DefBanner = "SSH-2.0-OpenSSH_7.4p1"
 )
 
-type multVar []string
-
-func (m *multVar) String() string {
-	return strings.Join(*m, ",")
-}
-
-func (m *multVar) Set(v string) error {
-	*m = append(*m, v)
-	return nil
-}
-
 func main() {
 	var (
 		listenPort = flag.Int("p", DefPort, "`port` to listen on")
@@ -36,9 +24,12 @@ func main() {
 		bannerLine = flag.String("b", DefBanner, "SSH server `banner`")
 		sourceIP   = flag.String("s", "", "`source` IP of interface to bind to")
 
-		hostKeyFiles = make(multVar, 0)
+		hostKeyFiles []string
 	)
-	flag.Var(&hostKeyFiles, "h", "SSH server host key PEM `file`s")
+	flag.Func("h", "SSH server host key PEM `file`s", func(s string) error {
+		hostKeyFiles = append(hostKeyFiles, s)
+		return nil
+	})
 	flag.Parse()
 
 	config := &atsshd.Config{
