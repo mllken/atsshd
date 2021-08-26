@@ -26,7 +26,7 @@ func main() {
 
 		hostKeyFiles []string
 	)
-	flag.Func("h", "SSH server host key PEM `file`s", func(s string) error {
+	flag.Func("k", "SSH server host key PEM `file`s", func(s string) error {
 		hostKeyFiles = append(hostKeyFiles, s)
 		return nil
 	})

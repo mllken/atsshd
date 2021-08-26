@@ -7,17 +7,17 @@ atsshd listens for incoming SSH connections and logs the username, password, and
 ```console
 $ atsshd --help
 Usage of atsshd:
-  -A	enable attack mode
+  -A    enable attack mode
   -b banner
-    	SSH server banner (default "SSH-2.0-OpenSSH_6.1p2")
-  -h file
-    	SSH server host key PEM files
+        SSH server banner (default "SSH-2.0-OpenSSH_7.4p1")
+  -k file
+        SSH server host key PEM files
   -l file
-    	output log file
+        output log file
   -p port
-    	port to listen on (default 22)
+        port to listen on (default 22)
   -s source
-    	source IP of interface to bind to
+        source IP of interface to bind to
 ```
 
 In attack mode, the attacker will get attacked serially.  If 3 network failures happen in a row, we give up on attacking and just log the incoming passwords.
