@@ -1,4 +1,4 @@
-module github.com/emilliken/atsshd
+module github.com/mllken/atsshd
 
 go 1.16
 
