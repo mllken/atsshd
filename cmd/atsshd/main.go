@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/emilliken/atsshd"
+	"github.com/mllken/atsshd"
 )
 
 const (
